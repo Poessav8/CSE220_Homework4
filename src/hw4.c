@@ -234,7 +234,7 @@ bool is_valid_bishop_move(int src_row, int src_col, int dest_row, int dest_col, 
     return true;
 }
 
-//problematic
+//FIX QUEEN!!!!
 bool is_valid_queen_move(int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
 	if((src_row != dest_row) && (src_col != dest_col)){ //bishop
 		return is_valid_bishop_move(src_row, src_col, dest_row, dest_col, game);
@@ -283,9 +283,26 @@ bool is_valid_move(char piece, int src_row, int src_col, int dest_row, int dest_
 }
 
 void fen_to_chessboard(const char *fen, ChessGame *game) {
-    (void)fen;
-    (void)game;
+    int row = 0, col = 0;
+    int i = 0;
+    while (fen[i] != ' ') {
+        if (fen[i] >= '1' && fen[i] <= '8') {
+            int emptySquares = fen[i] - '0';
+            for (int j = 0; j < emptySquares; j++) {
+                game->chessboard[row][col++] = '.';
+            }
+        } else if (fen[i] == '/') {
+            row++;
+            col = 0;
+        } else {
+            game->chessboard[row][col++] = fen[i];
+        }
+        i++;
+    }
+    i++; // skip space
+    game->currentPlayer = fen[i] == 'w' ? WHITE_PLAYER : BLACK_PLAYER;
 }
+
 
 int parse_move(const char *move, ChessMove *parsed_move) {
     (void)move;
