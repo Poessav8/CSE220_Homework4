@@ -307,7 +307,39 @@ void fen_to_chessboard(const char *fen, ChessGame *game) {
 int parse_move(const char *move, ChessMove *parsed_move) {
     (void)move;
     (void)parsed_move;
-    return -999;
+    if (strlen(move) != 4 && strlen(move) != 5)
+        return PARSE_MOVE_INVALID_FORMAT; // Return error code for invalid format
+
+    char from_col = move[0];
+    char from_row = move[1];
+    char to_col = move[2];
+    char to_row = move[3];
+
+    // Check if the row letter is in the range 'a' through 'h'
+    if (from_col < 'a' || from_col > 'h' || to_col < 'a' || to_col > 'h')
+        return PARSE_MOVE_INVALID_FORMAT; // Return error code for invalid format
+
+    if(from_row < '0' || from_row > '8' || to_row < '0' || to_row > '8'){
+        return PARSE_MOVE_OUT_OF_BOUNDS;
+    }
+
+    if(strlen(move) == 5){
+        char promotion = move[4];
+        if(to_row != '1' && to_row != '8'){
+            return PARSE_MOVE_INVALID_DESTINATION;
+        }
+
+        if(promotion != 'q' && promotion != 'r' && promotion != 'b' && promotion != 'n'){
+            return PARSE_MOVE_INVALID_PROMOTION;
+        }
+    }
+    strncpy(parsed_move->startSquare, move, 2);
+    parsed_move->startSquare[2] = '\0'; // Null-terminate the string
+    strncpy(parsed_move->endSquare, move + 2, 2);
+    parsed_move->endSquare[2] = '\0'; // Null-terminate the string
+
+
+    return 0;
 }
 
 int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
