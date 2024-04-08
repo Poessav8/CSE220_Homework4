@@ -319,7 +319,7 @@ int parse_move(const char *move, ChessMove *parsed_move) {
     if (from_col < 'a' || from_col > 'h' || to_col < 'a' || to_col > 'h')
         return PARSE_MOVE_INVALID_FORMAT; // Return error code for invalid format
 
-    if(from_row < '0' || from_row > '8' || to_row < '0' || to_row > '8'){
+    if(from_row < '1' || from_row > '8' || to_row < '1' || to_row > '8'){
         return PARSE_MOVE_OUT_OF_BOUNDS;
     }
 
@@ -352,6 +352,46 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
     (void)move;
     (void)is_client;
     (void)validate_move;
+
+    int start_row = move->startSquare[1] - '1';
+    int start_col = move->startSquare[0] - 'a';
+
+    if(validate_move){
+        //error checks here
+        if((is_client && (game->currentPlayer != WHITE_PLAYER)) || (!is_client && (game->currentPlayer != BLACK_PLAYER))){
+            return MOVE_OUT_OF_TURN;
+        }
+        //moving from empty square not allowed
+        //move->startSquare = e5. get the number of the board!
+        /*
+        int start_row = move->startSquare[1] - '1';
+        int start_col = move->startSquare[0] - 'a';
+
+        int end_row = move->endSquare[1] - '1';
+        int end_col = move->endSquare[0] - 'a';
+
+        if(game->chessboard[start_row][end_row] == '.'){
+
+        }
+
+
+
+        if(game->chessboard[move->startSquare][move->endSquare] == '.'){
+            return MOVE_NOTHING;
+        }
+        */
+
+       if(game->chessboard[start_row][start_col] == '.'){
+            return MOVE_NOTHING;
+        }
+
+        if((is_client && islower(game->chessboard[start_row][start_col])) || (!is_client && isupper(game->chessboard[start_row][start_col])) ){
+            return MOVE_WRONG_COLOR;
+        }
+        
+    }
+    //update game->moves, game->chessboard, etc
+
     return -999;
 }
 
