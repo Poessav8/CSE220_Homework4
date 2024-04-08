@@ -335,9 +335,14 @@ int parse_move(const char *move, ChessMove *parsed_move) {
     }
     strncpy(parsed_move->startSquare, move, 2);
     parsed_move->startSquare[2] = '\0'; // Null-terminate the string
-    strncpy(parsed_move->endSquare, move + 2, 2);
-    parsed_move->endSquare[2] = '\0'; // Null-terminate the string
-
+    if(strlen(move) == 4){
+     strncpy(parsed_move->endSquare, move + 2, 2);
+    parsed_move->endSquare[2] = '\0'; // Null-terminate the string   
+    }else{
+        strncpy(parsed_move->endSquare, move + 2, 3);
+    parsed_move->endSquare[3] = '\0'; // Null-terminate the string  
+    }
+    
 
     return 0;
 }
