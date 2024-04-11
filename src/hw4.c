@@ -130,39 +130,36 @@ bool is_valid_pawn_move(char piece, int src_row, int src_col, int dest_row, int 
     
 }
 
+
+//temp func
 bool is_valid_rook_move(int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
-   
-    // Verify that rook is not moving diagonally, i.e., both row and column change
     if (src_row != dest_row && src_col != dest_col) {
         return false;
     }
-    if(src_row == dest_row && src_col == dest_row){ //rook doesn't move
-	    return false;
-	}
-
-    // Verify that no pieces are blocking the path between source and destination.
-    if (src_row == dest_row) { // Rows stay the same, column changes
-        int start = (src_col > dest_col) ? dest_col : src_col;
-        int end = (src_col > dest_col) ? src_col : dest_col;
+    int start, end;
+    if (src_row == dest_row) { 
+        start = (src_col > dest_col) ? dest_col : src_col;
+        end = (src_col > dest_col) ? src_col : dest_col;
         for (int i = start + 1; i < end; i++) {
             if (game->chessboard[src_row][i] != '.') {
                 return false;
             }
         }
-    } else if (src_col == dest_col) { // Columns stay the same, row changes
-        int start = (src_row > dest_row) ? dest_row : src_row;
-        int end = (src_row > dest_row) ? src_row : dest_row;
+    } else if (src_col == dest_col) { 
+        start = (src_row > dest_row) ? dest_row : src_row;
+        end = (src_row > dest_row) ? src_row : dest_row;
         for (int i = start + 1; i < end; i++) {
             if (game->chessboard[i][src_col] != '.') {
                 return false;
             }
         }
-    } else { // Rook is not moving along either rows or columns
+    } else { 
         return false;
     }
-
     return true;
 }
+
+
 
 bool is_valid_knight_move(int src_row, int src_col, int dest_row, int dest_col) {
     if(src_row == dest_row || src_col == dest_col){ //if only moves horizontal/vertical or both
@@ -179,19 +176,15 @@ bool is_valid_knight_move(int src_row, int src_col, int dest_row, int dest_col) 
 	
 }
 
-bool is_valid_bishop_move(int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
-      //verifies that bishop is not moving solely vertically or horizontally
-    if(src_row == dest_row || src_col == dest_col){
-	    return false;
-	   }
-	  //verify that it's moving diagonally correctly 
-	  if(abs(src_row - dest_row) != abs(src_col - dest_col)){
-		  return false;
-		}
 
-    // verify that there are no pieces blocking path between positions
-    if (dest_col > src_col) { // moved right, now can move up or down
-        if (dest_row > src_row) { // moved down
+
+//temp func
+bool is_valid_bishop_move(int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
+    if (abs(src_row - dest_row) != abs(src_col - dest_col)) {
+        return false;
+    }
+    if (dest_col > src_col) { 
+        if (dest_row > src_row) { 
             int i = src_row + 1;
             int j = src_col + 1;
             while (i < dest_row) {
@@ -200,9 +193,9 @@ bool is_valid_bishop_move(int src_row, int src_col, int dest_row, int dest_col, 
                 }
                 i++, j++;
             }
-        } else { // moved up !! INPUT goes here, dest_row < src_row
-            int i = src_row - 1; // = 4... huh. wrong
-            int j = src_col + 1; // = 
+        } else { 
+            int i = src_row - 1;
+            int j = src_col + 1;
             while (i > dest_row) {
                 if (game->chessboard[i][j] != '.') {
                     return false;
@@ -210,29 +203,31 @@ bool is_valid_bishop_move(int src_row, int src_col, int dest_row, int dest_col, 
                 i--, j++;
             }
         }
-    } else{ //moved left , so end_col < start_col
-		if (dest_row > src_row) { // moved down
+    } else { 
+        if (dest_row > src_row) { 
             int i = src_row + 1;
-            int j = src_col - 1; // Corrected here
+            int j = src_col - 1;
             while (i < dest_row) {
-                if (game->chessboard[i][j] != '.') {
-                return false;
-            }
-            i++, j--;
-        }
-	    } else { // moved up
-        int i = src_row - 1;
-        int j = src_col - 1; // Corrected here
-            while (i > dest_row) {
                 if (game->chessboard[i][j] != '.') {
                     return false;
                 }
                 i++, j--;
             }
-	    }
+        } else { 
+            int i = src_row - 1;
+            int j = src_col - 1;
+            while (i > dest_row) {
+                if (game->chessboard[i][j] != '.') {
+                    return false;
+                }
+                i--, j--;
+            }
+        }
     }
     return true;
 }
+
+
 
 //FIX QUEEN!!!!
 bool is_valid_queen_move(int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
@@ -355,6 +350,8 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
 
     int start_row = move->startSquare[1] - '1';
     int start_col = move->startSquare[0] - 'a';
+    int end_row = move->endSquare[1] - '1';
+    int end_col = move->endSquare[0] - 'a';
 
     if(validate_move){
         //error checks here
@@ -388,11 +385,39 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
         if((is_client && islower(game->chessboard[start_row][start_col])) || (!is_client && isupper(game->chessboard[start_row][start_col])) ){
             return MOVE_WRONG_COLOR;
         }
-        
+        if((!is_client && islower(game->chessboard[end_row][end_col])) || (is_client && isupper(game->chessboard[end_row][end_col]))){
+        return MOVE_SUS;
+        }
+        if(strlen(move->endSquare) == 3 && ((game->chessboard[end_row][end_col] != 'p') && (game->chessboard[end_row][end_col] != 'P'))){
+        return MOVE_NOT_A_PAWN;
+        }
+        if(!is_valid_move(game->chessboard[start_row][start_col], start_row, start_col, end_row, end_col, game)){
+        return MOVE_WRONG;
+        }
     }
-    //update game->moves, game->chessboard, etc
-
-    return -999;
+// Update the state of the ChessGame struct
+if(game->chessboard[end_row][end_col] != '.'){
+    if(game->capturedCount < MAX_CAPTURED_PIECES){
+        game->capturedPieces[game->capturedCount] = game->chessboard[end_row][end_col];
+        game->capturedCount++;
+    }
+}
+game->moves[game->moveCount] = *move;
+game->moveCount++;
+game->chessboard[end_row][end_col] = game->chessboard[start_row][start_col];
+game->chessboard[start_row][start_col] = '.';
+game->currentPlayer = (game->currentPlayer == WHITE_PLAYER) ? BLACK_PLAYER : WHITE_PLAYER;
+// Check for pawn promotion
+if((end_row == 0 && isupper(game->chessboard[end_row][end_col])) || (end_row == 7 && islower(game->chessboard[end_row][end_col]))){
+    if(strlen(move->endSquare) == 4){
+        char promotionPiece = move->endSquare[3];
+        if((game->chessboard[end_row][end_col] == 'p' && promotionPiece >= 'a' && promotionPiece <= 'z') ||
+           (game->chessboard[end_row][end_col] == 'P' && promotionPiece >= 'A' && promotionPiece <= 'Z')){
+            game->chessboard[end_row][end_col] = promotionPiece;
+        }
+    }
+}
+    return 0;
 }
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
