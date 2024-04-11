@@ -365,7 +365,7 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
         }
 //doesn't work
         
-        if ((is_client && islower(game->chessboard[start_row][start_col])) || (!is_client && isupper(game->chessboard[start_row][start_col]))) {
+        if((is_client && isupper(game->chessboard[start_row][start_col])) || (!is_client && islower(game->chessboard[start_row][start_col]))){
             return MOVE_WRONG_COLOR; // Return error code for wrong color
         }
 //ok?
