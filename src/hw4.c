@@ -348,6 +348,7 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
     (void)is_client;
     (void)validate_move;
 
+    
     int start_row = move->startSquare[1] - '1';
     int start_col = move->startSquare[0] - 'a';
     int end_row = move->endSquare[1] - '1';
@@ -358,39 +359,30 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
         if((is_client && (game->currentPlayer != WHITE_PLAYER)) || (!is_client && (game->currentPlayer != BLACK_PLAYER))){
             return MOVE_OUT_OF_TURN;
         }
-        //moving from empty square not allowed
-        //move->startSquare = e5. get the number of the board!
-        /*
-        int start_row = move->startSquare[1] - '1';
-        int start_col = move->startSquare[0] - 'a';
-
-        int end_row = move->endSquare[1] - '1';
-        int end_col = move->endSquare[0] - 'a';
-
-        if(game->chessboard[start_row][end_row] == '.'){
-
-        }
-
-
-
-        if(game->chessboard[move->startSquare][move->endSquare] == '.'){
-            return MOVE_NOTHING;
-        }
-        */
-
+        
        if(game->chessboard[start_row][start_col] == '.'){
             return MOVE_NOTHING;
         }
-
-        if((is_client && islower(game->chessboard[start_row][start_col])) || (!is_client && isupper(game->chessboard[start_row][start_col])) ){
-            return MOVE_WRONG_COLOR;
+//doesn't work
+        
+        if ((is_client && islower(game->chessboard[start_row][start_col])) || (!is_client && isupper(game->chessboard[start_row][start_col]))) {
+            return MOVE_WRONG_COLOR; // Return error code for wrong color
         }
-        if((!is_client && islower(game->chessboard[end_row][end_col])) || (is_client && isupper(game->chessboard[end_row][end_col]))){
-        return MOVE_SUS;
+//ok?
+        if((!is_client && isupper(game->chessboard[end_row][end_col])) || (is_client && islower(game->chessboard[end_row][end_col]))){
+            return MOVE_SUS;
         }
+//ok?
         if(strlen(move->endSquare) == 3 && ((game->chessboard[end_row][end_col] != 'p') && (game->chessboard[end_row][end_col] != 'P'))){
         return MOVE_NOT_A_PAWN;
         }
+//ok?
+        if(strlen(move->endSquare) == 2 && ((game->chessboard[start_row][start_col] == 'p' && end_row == 7) || (game->chessboard[start_row][start_col] == 'P' && end_row == 0))){
+            return MOVE_MISSING_PROMOTION;
+        }
+
+
+
         if(!is_valid_move(game->chessboard[start_row][start_col], start_row, start_col, end_row, end_col, game)){
         return MOVE_WRONG;
         }
@@ -411,9 +403,11 @@ game->currentPlayer = (game->currentPlayer == WHITE_PLAYER) ? BLACK_PLAYER : WHI
 if((end_row == 0 && isupper(game->chessboard[end_row][end_col])) || (end_row == 7 && islower(game->chessboard[end_row][end_col]))){
     if(strlen(move->endSquare) == 4){
         char promotionPiece = move->endSquare[3];
-        if((game->chessboard[end_row][end_col] == 'p' && promotionPiece >= 'a' && promotionPiece <= 'z') ||
-           (game->chessboard[end_row][end_col] == 'P' && promotionPiece >= 'A' && promotionPiece <= 'Z')){
-            game->chessboard[end_row][end_col] = promotionPiece;
+        if(game->chessboard[end_row][end_col] == 'p'){
+            game->chessboard[end_row][end_col] = tolower(promotionPiece);
+        }
+        if (game->chessboard[end_row][end_col] == 'P'){
+            game->chessboard[end_row][end_col] = toupper(promotionPiece);
         }
     }
 }
