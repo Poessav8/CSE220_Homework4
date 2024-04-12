@@ -351,9 +351,9 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
     
     int start_row = move->startSquare[1] - '1';
     int start_col = move->startSquare[0] - 'a';
-    int end_row = move->endSquare[1] - '1';
+    int end_row = move->endSquare[1] - '0';
     int end_col = move->endSquare[0] - 'a';
-
+    printf("START: game->chessboard[%d][%d], END: game->chessboard[%d][%d]\n", start_row, start_col, end_row, end_col);
     if(validate_move){
         //error checks here
         if((is_client && (game->currentPlayer != WHITE_PLAYER)) || (!is_client && (game->currentPlayer != BLACK_PLAYER))){
