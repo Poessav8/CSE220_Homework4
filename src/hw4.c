@@ -415,8 +415,10 @@ if((end_row == 0 && isupper(game->chessboard[end_row][end_col])) || (end_row == 
 int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
     // any required variable declarations go here
     int start_row = move->startSquare[1] - '1';
+    start_row = 7 - start_row;
     int start_col = move->startSquare[0] - 'a';
-    int end_row = move->endSquare[1] - '1';
+    int end_row =  move->endSquare[1] - '1';
+    end_row = 7 - end_row;
     int end_col = move->endSquare[0] - 'a';
 
     if (validate_move) {
@@ -435,17 +437,17 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
         }
 
         // MOVE_WRONG_COLOR
-        if ((is_client && isupper(game->chessboard[start_row][start_col])) || (!is_client && islower(game->chessboard[start_row][start_col]))) {
+        if ((is_client && islower(game->chessboard[start_row][start_col])) || (!is_client && isupper(game->chessboard[start_row][start_col]))) {
             return MOVE_WRONG_COLOR; // Return error code for wrong color
         }
 
         // MOVE_SUS
-        if ((!is_client && isupper(game->chessboard[end_row][end_col])) || (is_client && islower(game->chessboard[end_row][end_col]))) {
+        if ((!is_client && islower(game->chessboard[end_row][end_col])) || (is_client && isupper(game->chessboard[end_row][end_col]))) {
             return MOVE_SUS;
         }
 
         // MOVE_NOT_A_PAWN
-        if (strlen(move->endSquare) == 3 && ((game->chessboard[end_row][end_col] != 'p') && (game->chessboard[end_row][end_col] != 'P'))) {
+        if (strlen(move->endSquare) == 3 && (!((game->chessboard[start_row][start_col] == 'p') || (game->chessboard[start_row][start_col] == 'P')))) {
             return MOVE_NOT_A_PAWN;
         }
 
@@ -478,27 +480,13 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
 
     // Update currentPlayer
     game->currentPlayer = (game->currentPlayer == WHITE_PLAYER) ? BLACK_PLAYER : WHITE_PLAYER;
-/*
+
+
+
     // Check for pawn promotion
-    if ((end_row == 0 && isupper(game->chessboard[end_row][end_col])) || (end_row == 7 && islower(game->chessboard[end_row][end_col]))) {
-        if (strlen(move->endSquare) == 4) {
-            char promotionPiece = move->endSquare[3];
-            if (game->chessboard[end_row][end_col] == 'p') {
-                game->chessboard[end_row][end_col] = tolower(promotionPiece);
-            }
-            if (game->chessboard[end_row][end_col] == 'P') {
-                game->chessboard[end_row][end_col] = toupper(promotionPiece);
-            }
-        }
+    if(strlen(move->endSquare) == 3){
+        game->chessboard[end_row][end_col] = is_client? toupper(move->endSquare[2]) : move->endSquare[2];    
     }
-*/
-    // Check for pawn promotion
-if ((end_row == 7 && isupper(game->chessboard[end_row][end_col])) || (end_row == 0 && islower(game->chessboard[end_row][end_col]))) {
-    if (strlen(move->endSquare) == 4) {
-        char promotionPiece = move->endSquare[3];
-        game->chessboard[end_row][end_col] = promotionPiece;
-    }
-}
 
     return 0;
 }
