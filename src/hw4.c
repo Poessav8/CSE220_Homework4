@@ -341,12 +341,9 @@ int parse_move(const char *move, ChessMove *parsed_move) {
 
     return 0;
 }
+/*
 
 int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
-    (void)game;
-    (void)move;
-    (void)is_client;
-    (void)validate_move;
 
     
     int start_row = move->startSquare[1] - '1';
@@ -413,6 +410,100 @@ if((end_row == 0 && isupper(game->chessboard[end_row][end_col])) || (end_row == 
 }
     return 0;
 }
+*/
+
+int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
+    // any required variable declarations go here
+    int start_row = move->startSquare[1] - '1';
+    int start_col = move->startSquare[0] - 'a';
+    int end_row = move->endSquare[1] - '1';
+    int end_col = move->endSquare[0] - 'a';
+
+    if (validate_move) {
+        // error checks go here
+
+        printf("START: game->chessboard[%d][%d], END: game->chessboard[%d][%d]\n", start_row, start_col, end_row, end_col);
+
+        // MOVE_OUT_OF_TURN
+        if ((is_client && (game->currentPlayer != WHITE_PLAYER)) || (!is_client && (game->currentPlayer != BLACK_PLAYER))) {
+            return MOVE_OUT_OF_TURN;
+        }
+
+        // MOVE_NOTHING
+        if (game->chessboard[start_row][start_col] == '.') {
+            return MOVE_NOTHING;
+        }
+
+        // MOVE_WRONG_COLOR
+        if ((is_client && isupper(game->chessboard[start_row][start_col])) || (!is_client && islower(game->chessboard[start_row][start_col]))) {
+            return MOVE_WRONG_COLOR; // Return error code for wrong color
+        }
+
+        // MOVE_SUS
+        if ((!is_client && isupper(game->chessboard[end_row][end_col])) || (is_client && islower(game->chessboard[end_row][end_col]))) {
+            return MOVE_SUS;
+        }
+
+        // MOVE_NOT_A_PAWN
+        if (strlen(move->endSquare) == 3 && ((game->chessboard[end_row][end_col] != 'p') && (game->chessboard[end_row][end_col] != 'P'))) {
+            return MOVE_NOT_A_PAWN;
+        }
+
+        // MOVE_MISSING_PROMOTION
+        if (strlen(move->endSquare) == 2 && ((game->chessboard[start_row][start_col] == 'p' && end_row == 7) || (game->chessboard[start_row][start_col] == 'P' && end_row == 0))) {
+            return MOVE_MISSING_PROMOTION;
+        }
+
+        // MOVE_WRONG
+        if (!is_valid_move(game->chessboard[start_row][start_col], start_row, start_col, end_row, end_col, game)) {
+            return MOVE_WRONG;
+        }
+    }
+
+    // Update the state of the ChessGame struct
+    if (game->chessboard[end_row][end_col] != '.') {
+        if (game->capturedCount < MAX_CAPTURED_PIECES) {
+            game->capturedPieces[game->capturedCount] = game->chessboard[end_row][end_col];
+            game->capturedCount++;
+        }
+    }
+    
+    // Update moves
+    game->moves[game->moveCount] = *move;
+    game->moveCount++;
+
+    // Move the piece
+    game->chessboard[end_row][end_col] = game->chessboard[start_row][start_col];
+    game->chessboard[start_row][start_col] = '.';
+
+    // Update currentPlayer
+    game->currentPlayer = (game->currentPlayer == WHITE_PLAYER) ? BLACK_PLAYER : WHITE_PLAYER;
+/*
+    // Check for pawn promotion
+    if ((end_row == 0 && isupper(game->chessboard[end_row][end_col])) || (end_row == 7 && islower(game->chessboard[end_row][end_col]))) {
+        if (strlen(move->endSquare) == 4) {
+            char promotionPiece = move->endSquare[3];
+            if (game->chessboard[end_row][end_col] == 'p') {
+                game->chessboard[end_row][end_col] = tolower(promotionPiece);
+            }
+            if (game->chessboard[end_row][end_col] == 'P') {
+                game->chessboard[end_row][end_col] = toupper(promotionPiece);
+            }
+        }
+    }
+*/
+    // Check for pawn promotion
+if ((end_row == 7 && isupper(game->chessboard[end_row][end_col])) || (end_row == 0 && islower(game->chessboard[end_row][end_col]))) {
+    if (strlen(move->endSquare) == 4) {
+        char promotionPiece = move->endSquare[3];
+        game->chessboard[end_row][end_col] = promotionPiece;
+    }
+}
+
+    return 0;
+}
+
+
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
     (void)game;
@@ -434,7 +525,18 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
     (void)game;
     (void)username;
     (void)db_filename;
-    return -999;
+
+      FILE *file = fopen(db_filename, "a"); // Open the file in append mode
+    if (file == NULL) {
+        return -1; // Error opening the file
+    }
+    char fen[255];
+    chessboard_to_fen(fen, game); // Generate the FEN string of the current game state
+    // Write the username and FEN string to the file
+    fprintf(file, "%s:%s\n", username, fen);
+    fclose(file);
+    return 0; // Successful save operation
+    
 }
 
 int load_game(ChessGame *game, const char *username, const char *db_filename, int save_number) {
@@ -442,7 +544,35 @@ int load_game(ChessGame *game, const char *username, const char *db_filename, in
     (void)username;
     (void)db_filename;
     (void)save_number;
-    return -999;
+    /*
+    FILE *file = fopen(db_filename, "r");
+    if (file == NULL) {
+        return -1; // Error opening the file
+    }
+    char line[255];
+    int count = 0; // Counter for save files found for the given username
+    while (fgets(line, 255, file) != NULL) {
+        char *token;
+        token = strtok(line, ":");
+        
+        if (strcmp(token, username) == 0) {
+            count++;
+            if (count == save_number) {
+                // Found the specified save file for the username
+                char *fen = strchr(line, ':') + 1; // Extract the FEN string
+                // Update the game state with the loaded FEN string
+                fen[strlen(fen) - 1] = '\0'; // Remove the newline character
+                
+                initialize_game(game);
+                fen_to_chessboard(fen, game);
+                fclose(file);
+                return 0; // Successfully loaded the game
+            }
+        }
+    }
+    fclose(file);
+    */
+    return -1; // Game state not found for the given username and save number
 }
 
 void display_chessboard(ChessGame *game) {
