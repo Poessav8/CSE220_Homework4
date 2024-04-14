@@ -428,25 +428,109 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
 
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-    (void)game;
-    (void)message;
-    (void)socketfd;
-    (void)is_client;
-    return -999;
+    if (strncmp(message, "/move", 5) == 0) {
+        ChessMove parsed_move;
+        int parse_result = parse_move(message + 6, &parsed_move);
+        if (parse_result != 0) {
+            return COMMAND_ERROR; // Return error if move parsing failed
+        }
+
+        int make_move_result = make_move(game, &parsed_move, is_client, true);
+        if (make_move_result == 0) {
+            send(socketfd, message, strlen(message), 0);
+            return COMMAND_MOVE;
+        } else {
+            return COMMAND_ERROR;
+        }
+    }
+    else if (strcmp(message, "/forfeit") == 0) {
+        send(socketfd, message, strlen(message), 0);
+        return COMMAND_FORFEIT;
+    }
+    else if (strcmp(message, "/chessboard") == 0) {
+        display_chessboard(game);
+        return COMMAND_DISPLAY;
+    }
+    else if (strncmp(message, "/import", 7) == 0 && !is_client) {
+        fen_to_chessboard(message + 8, game);
+        send(socketfd, message, strlen(message), 0);
+        return COMMAND_IMPORT;
+    }
+    else if (strncmp(message, "/load", 5) == 0) {
+        char username[255];
+        int game_number;
+        if (sscanf(message + 6, "%s %d", username, &game_number) == 2) {
+            int load_game_result = load_game(game, username, "game_database.txt", game_number);
+            if (load_game_result == 0) {
+                send(socketfd, message, strlen(message), 0);
+                return COMMAND_LOAD;
+            } else {
+                return COMMAND_ERROR;
+            }
+        } else {
+            return COMMAND_ERROR;
+        }
+    }
+    else if (strncmp(message, "/save", 5) == 0) {
+        char username[255];
+        if (sscanf(message + 6, "%s", username) == 1) {
+            int save_game_result = save_game(game, username, "game_database.txt");
+            if (save_game_result == 0) {
+                send(socketfd, message, strlen(message), 0);
+                return COMMAND_SAVE;
+            } else {
+                return COMMAND_ERROR;
+            }
+        } else {
+            return COMMAND_ERROR;
+        }
+    }
+    return COMMAND_UNKNOWN;
+    
 }
 
 int receive_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-    (void)game;
-    (void)message;
-    (void)socketfd;
-    (void)is_client;
-    return -999;
+    if (strncmp(message, "/move", 5) == 0) {
+        ChessMove parsed_move;
+        int parse_result = parse_move(message + 6, &parsed_move);
+        if (parse_result != 0) {
+            return COMMAND_ERROR; // Return error if move parsing failed
+        }
+        int make_move_result = make_move(game, &parsed_move, is_client, false);
+        if (make_move_result == 0) {
+            return COMMAND_MOVE;
+        } else {
+            return COMMAND_ERROR;
+        }
+    }
+    else if (strcmp(message, "/forfeit") == 0) {
+        close(socketfd);
+        return COMMAND_FORFEIT;
+    }
+    else if (strncmp(message, "/import", 7) == 0 && is_client) {
+        fen_to_chessboard(message + 8, game);
+        return COMMAND_IMPORT;
+    }
+    else if (strncmp(message, "/load", 5) == 0) {
+        char username[255];
+        int game_number;
+        if (sscanf(message + 6, "%s %d", username, &game_number) == 2) {
+            int load_game_result = load_game(game, username, "game_database.txt", game_number);
+            if (load_game_result == 0) {
+                return COMMAND_LOAD;
+            } else {
+                return COMMAND_ERROR;
+            }
+        } else {
+            return COMMAND_ERROR;
+        }
+    }
+    
+    return -1; // Return -1 if no command matched
 }
 
 int save_game(ChessGame *game, const char *username, const char *db_filename) {
-    (void)game;
-    (void)username;
-    (void)db_filename;
+
    // printf("original chessboard:\n");
     display_chessboard(game);
     // Check if the username is empty
