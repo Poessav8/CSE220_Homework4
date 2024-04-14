@@ -428,10 +428,12 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
 
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
+    printf("MESSAGE: %s\n", message);
     if (strncmp(message, "/move", 5) == 0) {
         ChessMove parsed_move;
         int parse_result = parse_move(message + 6, &parsed_move);
         if (parse_result != 0) {
+            printf("command error _ parse failed???\n");
             return COMMAND_ERROR; // Return error if move parsing failed
         }
 
@@ -440,6 +442,7 @@ int send_command(ChessGame *game, const char *message, int socketfd, bool is_cli
             send(socketfd, message, strlen(message), 0);
             return COMMAND_MOVE;
         } else {
+            printf("command error???make_move_result = %d\n", make_move_result);//move out of turn error
             return COMMAND_ERROR;
         }
     }
@@ -490,6 +493,7 @@ int send_command(ChessGame *game, const char *message, int socketfd, bool is_cli
 }
 
 int receive_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
+    printf("MESSAGE: %s\n", message);
     if (strncmp(message, "/move", 5) == 0) {
         ChessMove parsed_move;
         int parse_result = parse_move(message + 6, &parsed_move);
@@ -500,10 +504,11 @@ int receive_command(ChessGame *game, const char *message, int socketfd, bool is_
         if (make_move_result == 0) {
             return COMMAND_MOVE;
         } else {
+            printf("COMMAND ERROR!!!\n");
             return COMMAND_ERROR;
         }
     }
-    else if (strcmp(message, "/forfeit") == 0) {
+    else if (strncmp(message, "/forfeit", 8) == 0) {
         close(socketfd);
         return COMMAND_FORFEIT;
     }

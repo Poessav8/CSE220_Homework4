@@ -37,8 +37,32 @@ int main() {
 
     while (1) {
         // Fill this in
+        char input[BUFFER_SIZE];
+        printf("[Client] Enter Command: ");
+        fgets(input, BUFFER_SIZE, stdin);
+        input[strcspn(input, "\n")] = 0; // remove newline character
+        int send_result = send_command(&game, input, connfd, true);
+    while (send_result == COMMAND_ERROR || send_result == COMMAND_UNKNOWN || send_result == COMMAND_SAVE) {
+        printf("[Client] Invalid command. Enter another command: ");
+        fgets(input, BUFFER_SIZE, stdin);
+        input[strcspn(input, "\n")] = 0; // remove newline character
+        send_result = send_command(&game, input, connfd, true);
+    
     }
-
+    printf("SEND RESULT: %d\n", send_result);
+    if (send_result == COMMAND_FORFEIT) {
+        close(connfd);
+        break;
+    }
+    char server_input[BUFFER_SIZE];
+    read(connfd, server_input, BUFFER_SIZE);
+    int receive_result = receive_command(&game, server_input, connfd, true);
+    printf("RECIEVE RESULT_client: %d\n", receive_result);
+    if (receive_result == COMMAND_FORFEIT) {
+        close(connfd);
+        break;
+    }
+    }
     // Please ensure that the following lines of code execute just before your program terminates.
     // If necessary, copy and paste it to other parts of your code where you terminate your program.
     FILE *temp = fopen("./fen.txt", "w");
